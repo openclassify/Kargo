@@ -10,6 +10,8 @@ class CreateShipment extends \SoapClient
         'GonderiyiKargoyaGonder'         => 'Teknomavi\\Kargo\\Company\\Surat\\Helper\\Gonderi\\GonderiyiKargoyaGonder',
         'Gonderi'                        => 'Teknomavi\\Kargo\\Company\\Surat\\Helper\\Gonderi\\Gonderi',
         'GonderiyiKargoyaGonderResponse' => 'Teknomavi\\Kargo\\Company\\Surat\\Helper\\Gonderi\\GonderiyiKargoyaGonderResponse',
+        'WebSiparisKodu' => 'Teknomavi\\Kargo\\Company\\Surat\\Helper\\Gonderi\\WebSiparisKodu',
+        'WebSiparisKoduResponse' => 'Teknomavi\\Kargo\\Company\\Surat\\Helper\\Gonderi\\WebSiparisKoduResponse',
     ];
 
     /**
@@ -40,5 +42,10 @@ class CreateShipment extends \SoapClient
     public function GonderiyiKargoyaGonder($parameters)
     {
         return $this->__soapCall('GonderiyiKargoyaGonder', [$parameters]);
+    }
+
+    public function WebSiparisKodu($parameters)
+    {
+        return $this->__soapCall('WebSiparisKodu', [$parameters]);
     }
 }
