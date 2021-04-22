@@ -1,5 +1,5 @@
 {
-  "name": "teknomavi/kargo",
+  "name": "visiosoft/kargo",
   "type": "library",
   "description": "Türkiye'deki kargo firmaları için merkezi entegrasyon kütüphanesi",
   "minimum-stability": "stable",
