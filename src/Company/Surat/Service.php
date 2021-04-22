@@ -134,9 +134,11 @@ class Service extends ServiceAbstract implements ServiceInterface
             $isError = $this->isErrorMessage($result, $packageInfo);
 
             if (!$isError) {
-                dd($result);
-                //Takip Kodu geldiğinde response PackageInfo ya eklenecek
-//                $packageInfo->setTrackingNumber($tracking_code);
+                $packageInfo->setTrackingNumber($result['TakipNo']);
+                $packageInfo->setNumberOfPackages($result['Adet']);
+                $packageInfo->setShipmentCost($result['Tutar']);
+                $packageInfo->setTrackingURL("https://www.suratkargo.com.tr/KargoTakip/?kargotakipno=" . $result['TakipNo']);
+                $packageInfo->setErrorMessage('');
             }
         } catch (\Exception $exception) {
             $packageInfo->setErrorMessage($exception->getMessage());
@@ -220,8 +222,8 @@ class Service extends ServiceAbstract implements ServiceInterface
         if (isset($res['Mesaj'])) {
             $packageInfo->setErrorMessage($res['Mesaj']);
 
-            return  true;
+            return true;
         }
-        return  false;
+        return false;
     }
 }
