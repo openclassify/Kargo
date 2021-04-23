@@ -71,6 +71,10 @@ class PackageInfo
     /**
      * @var string
      */
+    protected $trackingUrl;
+    /**
+     * @var string
+     */
     protected $errorCode;
     /**
      * @var string
@@ -438,6 +442,18 @@ class PackageInfo
     public function setCreateTime(\DateTime $createTime): self
     {
         $this->createTime = $createTime;
+
+        return $this;
+    }
+
+    public function getTrackingURL()
+    {
+        return $this->trackingUrl;
+    }
+
+    public function setTrackingURL($url)
+    {
+        $this->trackingUrl = $url;
 
         return $this;
     }

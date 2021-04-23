@@ -1,4 +1,5 @@
 <?php
+
 namespace Teknomavi\Kargo\Company\Surat;
 
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -7,7 +8,9 @@ use Teknomavi\Kargo\Company\ServiceInterface;
 use Teknomavi\Kargo\Company\Surat\Helper\Gonderi\CreateShipment;
 use Teknomavi\Kargo\Company\Surat\Helper\Gonderi\Gonderi;
 use Teknomavi\Kargo\Company\Surat\Helper\Gonderi\GonderiyiKargoyaGonder;
+use Teknomavi\Kargo\Company\Surat\Helper\Gonderi\WebSiparisKodu;
 use Teknomavi\Kargo\Model\Package;
+use Teknomavi\Kargo\Response\PackageInfo;
 
 /**
  * Class Service.
@@ -26,20 +29,38 @@ class Service extends ServiceAbstract implements ServiceInterface
     {
         if (!$this->shipmentService) {
             $this->shipmentService = new CreateShipment([
-                'trace'              => 1,
+                'trace' => 1,
                 'connection_timeout' => 60,
-                'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
+                'features' => SOAP_SINGLE_ELEMENT_ARRAYS,
             ]);
         }
 
         return $this->shipmentService;
     }
 
+
     /**
-     * @param Package $package
-     *
-     * @return mixed|void
+     * @var CreateShipment
      */
+    private $TakipService;
+
+    /**
+     * @return CreateShipment
+     */
+    private function initTakipService(): CreateShipment
+    {
+        if (!$this->TakipService) {
+            $this->TakipService = new CreateShipment([
+                'trace' => 1,
+                'connection_timeout' => 60,
+                'features' => SOAP_SINGLE_ELEMENT_ARRAYS,
+            ], 'http://webservices.suratkargo.com.tr/services.asmx?WSDL');
+        }
+
+        return $this->TakipService;
+    }
+
+
     public function addPackage(Package $package)
     {
         $gonderi = new Gonderi();
@@ -83,6 +104,47 @@ class Service extends ServiceAbstract implements ServiceInterface
             $gonderi->setIrsaliyeSiraNo($siraNo);
         }
         $this->packages[] = $gonderi;
+    }
+
+
+    public function addWebSiparisKod($webSiparisKod)
+    {
+        $this->WebSiparisKodlari[] = $webSiparisKod;
+    }
+
+    public function addGonderenCariKod($gonderenCariKod)
+    {
+        $this->GonderenCariKodlari[] = $gonderenCariKod;
+    }
+
+
+    public function getPackageInfoByReferenceNumber(string $referenceNumber): PackageInfo
+    {
+        $packageInfo = new PackageInfo();
+        $packageInfo->setReferenceNumber($referenceNumber);
+        $packageInfo->setPaymentType(PackageInfo::PAYMENT_TYPE_SENDER);
+
+        $service = $this->initTakipService();
+
+        $shipment_detail = new WebSiparisKodu($this->options['GonderenCariKodu'], $referenceNumber, $this->options['Sifre']);
+
+        try {
+            $result = $service->WebSiparisKodu($shipment_detail)->getWebSiparisKoduResult();
+            $result = $this->reponseXSDToArray($result);
+            $isError = $this->isErrorMessage($result, $packageInfo);
+
+            if (!$isError) {
+                $packageInfo->setTrackingNumber($result['TakipNo']);
+                $packageInfo->setNumberOfPackages($result['Adet']);
+                $packageInfo->setShipmentCost($result['Tutar']);
+                $packageInfo->setTrackingURL("https://www.suratkargo.com.tr/KargoTakip/?kargotakipno=" . $result['TakipNo']);
+                $packageInfo->setErrorMessage('');
+            }
+        } catch (\Exception $exception) {
+            $packageInfo->setErrorMessage($exception->getMessage());
+        }
+
+        return $packageInfo;
     }
 
     /**
@@ -135,7 +197,33 @@ class Service extends ServiceAbstract implements ServiceInterface
     {
         $resolver->setDefaults([
             'KullaniciAdi' => '',
-            'Sifre'        => '',
+            'Sifre' => '',
+            'GonderenCariKodu' => ''
         ]);
+    }
+
+    protected function reponseXSDToArray($response)
+    {
+        $response = $response->any;
+        $sxe = new \SimpleXMLElement($response);
+        $sxe->registerXPathNamespace('d', 'urn:schemas-microsoft-com:xml-diffgram-v1');
+        $result = $sxe->xpath("//NewDataSet");
+        $response_parameters = array();
+
+        foreach ($result[0] as $title) {
+            $response_parameters = array_merge($response_parameters, get_object_vars($title));
+        }
+
+        return $response_parameters;
+    }
+
+    private function isErrorMessage($res, $packageInfo)
+    {
+        if (isset($res['Mesaj'])) {
+            $packageInfo->setErrorMessage($res['Mesaj']);
+
+            return true;
+        }
+        return false;
     }
 }
