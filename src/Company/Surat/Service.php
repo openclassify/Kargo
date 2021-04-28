@@ -166,11 +166,7 @@ class Service extends ServiceAbstract implements ServiceInterface
             try {
                 $result = $service->GonderiyiKargoyaGonder($gonder);
                 if ($result->getGonderiyiKargoyaGonderResult() == 'Tamam') {
-                    $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
-                    $png = $generator->getBarcode($package->getOzelKargoTakipNo(), $generator::TYPE_CODE_128, 2, 90);
-                    $base64 = base64_encode($png);
                     $createShipmentResponse->setSuccess(true);
-                    $createShipmentResponse->setLabelStrings([$base64]);
                 } else {
                     $createShipmentResponse
                         ->setErrorCode('SURAT')
